@@ -1,0 +1,1 @@
+"""Armazenamentos temporários da aplicação."""

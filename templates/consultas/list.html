@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Consultas | Serviços médicos{% endblock %}
+
+{% block content %}
+<h1>Consultas</h1>
+
+{% if consultas %}
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Paciente</th>
+      <th>Médico</th>
+      <th>Agendada para</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for consulta in consultas %}
+    <tr>
+      <td>{{ consulta.id }}</td>
+      <td>{{ consulta.paciente_id }}</td>
+      <td>{{ consulta.medico_id }}</td>
+      <td>{{ consulta.scheduled_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Nenhuma consulta cadastrada.</p>
+{% endif %}
+{% endblock %}
