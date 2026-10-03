@@ -13,11 +13,35 @@ def test_default_admin_can_sign_in():
     create_db_and_tables()
     response = client.post(
         "/auth/sign-in",
-        json={"username": "admin", "password": "admin"},
+        json={"username": "admin", "password": "admin", "mfa_code": "123456"},
     )
 
     assert response.status_code == 200
     assert response.json()["token_type"] == "bearer"
+
+
+@pytest.mark.parametrize("mfa_code", [None, "000000"])
+def test_admin_sign_in_requires_valid_mfa_code(mfa_code: str | None):
+    create_db_and_tables()
+    payload = {"username": "admin", "password": "admin"}
+    if mfa_code is not None:
+        payload["mfa_code"] = mfa_code
+
+    response = client.post("/auth/sign-in", json=payload)
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid or missing MFA code"
+
+
+def test_non_admin_sign_in_does_not_require_mfa_code():
+    create_db_and_tables()
+
+    response = client.post(
+        "/auth/sign-in",
+        json={"username": "doctor", "password": "doctor"},
+    )
+
+    assert response.status_code == 200
 
 
 @pytest.mark.parametrize(

@@ -11,6 +11,7 @@ Jinja2==3.1.6
 pwdlib==0.3.1
 pydantic==2.13.5
 pydantic-settings==2.15.0
+python-multipart==0.0.22
 SQLAlchemy==2.0.54
 sqlmodel==0.0.47
 pydantic_core==2.46.5

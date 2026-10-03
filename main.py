@@ -7,6 +7,7 @@ from routes.auth import auth_router
 from routes.consultas import consultas_router
 from routes.pacientes import pacientes_router
 from routes.profissionais import profissionais_router
+from routes.partner_consultas import partner_consultas_router
 from middleware.jwt import JWTAuthenticationMiddleware
 
 ALLOWED_ORIGINS = [
@@ -50,3 +51,4 @@ app.include_router(consultas_router)
 app.include_router(pacientes_router)
 app.include_router(profissionais_router)
 app.include_router(auth_router)
+app.include_router(partner_consultas_router)

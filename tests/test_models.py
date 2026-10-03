@@ -15,6 +15,13 @@ def test_default_admin_user_has_admin_role_and_password():
     assert verify_password("admin", admin.password_hash)
 
 
+def test_default_receptionist_user_has_known_development_password():
+    receptionist = next(user for user in initial_users() if user.username == "receptionist")
+
+    assert receptionist.role == Role.RECEPTIONIST.value
+    assert verify_password("receptionist", receptionist.password_hash)
+
+
 @pytest.mark.parametrize(
     ("model", "payload"),
     [
