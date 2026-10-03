@@ -14,6 +14,9 @@ PUBLIC_PATHS = {"/health", "/auth/sign-in", "/openapi.json"}
 
 class JWTAuthenticationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        if request.url.path in PUBLIC_PATHS:
+            return await call_next(request)
+
         authorization = request.headers.get("Authorization", "")
         if not authorization.startswith("Bearer "):
             return self._unauthorized("Missing bearer token")

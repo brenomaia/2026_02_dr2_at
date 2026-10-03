@@ -2,10 +2,22 @@ import pytest
 from fastapi.testclient import TestClient
 
 from auth.authentication import create_access_token
+from database import create_db_and_tables
 from main import app
 from model.users import CurrentUser, Role
 
 client = TestClient(app)
+
+
+def test_default_admin_can_sign_in():
+    create_db_and_tables()
+    response = client.post(
+        "/auth/sign-in",
+        json={"username": "admin", "password": "admin"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["token_type"] == "bearer"
 
 
 @pytest.mark.parametrize(

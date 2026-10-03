@@ -4,7 +4,15 @@ import pytest
 from pydantic import ValidationError
 
 from model.consultas import ConsultaCreate, DoctorNotesUpdate
-from model.users import SignInRequest
+from auth.authentication import verify_password
+from model.users import Role, SignInRequest, initial_users
+
+
+def test_default_admin_user_has_admin_role_and_password():
+    admin = next(user for user in initial_users() if user.username == "admin")
+
+    assert admin.role == Role.ADMIN.value
+    assert verify_password("admin", admin.password_hash)
 
 
 @pytest.mark.parametrize(

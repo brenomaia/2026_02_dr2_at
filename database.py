@@ -21,7 +21,20 @@ def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         for user in initial_users():
-            exists = session.exec(select(User).where(User.username == user.username)).first()
-            if exists is None:
+            existing_user = session.exec(
+                select(User).where(User.username == user.username)
+            ).first()
+            if existing_user is not None:
+                continue
+
+            # O seed anterior usava o mesmo ID para ``administrator``. Migra o
+            # registro legado para o usuário padrão solicitado sem criar um
+            # segundo administrador.
+            legacy_user = session.get(User, user.id)
+            if legacy_user is not None and legacy_user.username == "administrator":
+                legacy_user.username = user.username
+                legacy_user.password_hash = user.password_hash
+                legacy_user.role = user.role
+            elif legacy_user is None:
                 session.add(user)
         session.commit()
