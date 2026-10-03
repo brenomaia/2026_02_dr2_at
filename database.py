@@ -16,7 +16,9 @@ def get_session() -> Generator[Session, None, None]:
 
 def create_db_and_tables() -> None:
     # Importa os modelos antes de construir os metadados do SQLModel.
-    from model.users import User, initial_users
+    from auth.authentication import hash_password
+    from databases.partners import get_partner_client
+    from model.users import PartnerClient, User, initial_users
 
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
@@ -37,4 +39,18 @@ def create_db_and_tables() -> None:
                 legacy_user.role = user.role
             elif legacy_user is None:
                 session.add(user)
+        if settings.oauth_bootstrap_client_id and settings.oauth_bootstrap_client_secret:
+            bootstrap_client = get_partner_client(settings.oauth_bootstrap_client_id, session)
+            if bootstrap_client is None:
+                session.add(
+                    PartnerClient(
+                        client_id=settings.oauth_bootstrap_client_id,
+                        secret_hash=hash_password(settings.oauth_bootstrap_client_secret),
+                        allowed_scopes=settings.oauth_bootstrap_client_scopes,
+                    )
+                )
+            elif bootstrap_client.allowed_scopes == "consultas:read":
+                # Migra o escopo inicial para a nomenclatura explícita de parceiro.
+                bootstrap_client.allowed_scopes = settings.oauth_bootstrap_client_scopes
+                session.add(bootstrap_client)
         session.commit()
