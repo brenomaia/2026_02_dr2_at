@@ -1,6 +1,9 @@
 from typing import Annotated
+from collections import deque
+from math import ceil
+from time import monotonic
 
-from fastapi import APIRouter, Depends, Form, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from auth.authentication import (
@@ -17,9 +20,32 @@ from model.users import OAuthTokenResponse, SignInRequest, TokenResponse
 
 auth_router = APIRouter(prefix="/auth", tags=["authentication"])
 basic_auth = HTTPBasic(auto_error=False)
+sign_in_attempts: dict[str, deque[float]] = {}
 
 
-@auth_router.post("/sign-in", response_model=TokenResponse)
+async def limit_sign_in(request: Request) -> None:
+    now = monotonic()
+    # Remove também clientes inativos para não acumular IPs indefinidamente.
+    for client_ip, attempts in list(sign_in_attempts.items()):
+        while attempts and now - attempts[0] >= 5:
+            attempts.popleft()
+        if not attempts:
+            del sign_in_attempts[client_ip]
+
+    client_ip = request.client.host if request.client else "unknown"
+    attempts = sign_in_attempts.setdefault(client_ip, deque())
+    if len(attempts) >= 2:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many sign-in attempts. Try again later.",
+            headers={"Retry-After": str(ceil(5 - (now - attempts[0])))},
+        )
+    attempts.append(now)
+
+
+@auth_router.post(
+    "/sign-in", response_model=TokenResponse, dependencies=[Depends(limit_sign_in)]
+)
 async def sign_in(credentials: SignInRequest) -> TokenResponse:
     user = authenticate_user(credentials.username, credentials.password)
     if user is None:
